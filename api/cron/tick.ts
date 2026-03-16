@@ -7,11 +7,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // For now, we will just open it or check for a custom secret.
   
   try {
-    const authHeader = req.headers.authorization;
     // Basic protection (optional but recommended in production)
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+    // Removed CRON_SECRET check to allow free external services like cron-job.org to ping the endpoint without authentication.
 
     await runSimulationTick();
     
