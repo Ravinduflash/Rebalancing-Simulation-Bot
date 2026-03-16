@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { runSimulationTick } from '../engine';
+import { runSimulationTick } from './engine';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow POST requests for security (optional depending on how Vercel Cron hits it)
