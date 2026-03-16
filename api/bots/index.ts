@@ -1,16 +1,19 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import { Handler } from '@netlify/functions';
 import supabase from '../db';
 import { getPrices } from '../pionex';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === 'GET') {
+export const handler: Handler = async (event, context) => {
+  if (event.httpMethod === 'GET') {
     const { data: bots, error } = await supabase.from('bots').select('*').order('created_at', { ascending: false });
-    if (error) return res.status(500).json({ error: error.message });
-    return res.json(bots);
+    if (error) return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+    return {
+        statusCode: 200,
+        body: JSON.stringify(bots)
+    };
   }
 
-  if (req.method === 'POST') {
-    const { name, coins, allocations, trigger_type, threshold_value, time_interval, initial_investment, trigger_prices, take_profit, stop_loss } = req.body;
+  if (event.httpMethod === 'POST') {
+    const { name, coins, allocations, trigger_type, threshold_value, time_interval, initial_investment, trigger_prices, take_profit, stop_loss } = JSON.parse(event.body || '{}');
     const now = Date.now();
     const prices = await getPrices();
 
@@ -55,12 +58,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         supabase.from('portfolio_snapshots').insert([{ bot_id: botId, total_value_usd: initial_investment, timestamp: now }])
       ]);
 
-      return res.json({ success: true });
+      return {
+          statusCode: 200,
+          body: JSON.stringify({ success: true })
+      };
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ error: 'Failed to create bot' });
+      return {
+          statusCode: 500,
+          body: JSON.stringify({ error: 'Failed to create bot' })
+      };
     }
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
-}
+  return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
+};

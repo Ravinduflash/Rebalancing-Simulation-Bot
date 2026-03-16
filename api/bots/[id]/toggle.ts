@@ -1,16 +1,24 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import { Handler } from '@netlify/functions';
 import supabase from '../../db';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+export const handler: Handler = async (event, context) => {
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
+  }
 
-  const { id } = req.query;
-  if (!id || typeof id !== 'string') return res.status(400).json({ error: 'Invalid ID' });
+  const idMatch = event.path.match(/\/api\/bots\/([^/]+)\/toggle/);
+  const id = idMatch ? idMatch[1] : null;
+
+  if (!id) return { statusCode: 400, body: JSON.stringify({ error: 'Invalid ID' }) };
 
   const { data: bot, error } = await supabase.from('bots').select('status').eq('id', id).single();
-  if (error || !bot) return res.status(404).json({ error: 'Bot not found' });
+  if (error || !bot) return { statusCode: 404, body: JSON.stringify({ error: 'Bot not found' }) };
 
   const newStatus = bot.status === 'active' ? 'paused' : 'active';
   await supabase.from('bots').update({ status: newStatus }).eq('id', id);
-  return res.json({ success: true, status: newStatus });
-}
+  
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ success: true, status: newStatus })
+  };
+};

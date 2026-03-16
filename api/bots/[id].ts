@@ -1,23 +1,29 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import { Handler } from '@netlify/functions';
 import supabase from '../db';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { id } = req.query;
-  if (!id || typeof id !== 'string') return res.status(400).json({ error: 'Invalid ID' });
+export const handler: Handler = async (event, context) => {
+  // Extract ID from the path since Netlify does not auto-map dynamic segments
+  const idMatch = event.path.match(/\/api\/bots\/([^/]+)/);
+  const id = idMatch ? idMatch[1] : null;
 
-  if (req.method === 'GET') {
+  if (!id) return { statusCode: 400, body: JSON.stringify({ error: 'Invalid ID' }) };
+
+  if (event.httpMethod === 'GET') {
     const { data: bot, error: botError } = await supabase.from('bots').select('*').eq('id', id).single();
-    if (botError || !bot) return res.status(404).json({ error: 'Bot not found' });
+    if (botError || !bot) return { statusCode: 404, body: JSON.stringify({ error: 'Bot not found' }) };
 
     const { data: holdings } = await supabase.from('holdings').select('*').eq('bot_id', id);
     const { data: trades } = await supabase.from('simulated_trades').select('*').eq('bot_id', id).order('timestamp', { ascending: false });
     const { data: snapshots } = await supabase.from('portfolio_snapshots').select('*').eq('bot_id', id).order('timestamp', { ascending: true });
 
-    return res.json({ bot, holdings, trades, snapshots });
+    return {
+        statusCode: 200,
+        body: JSON.stringify({ bot, holdings, trades, snapshots })
+    };
   }
 
-  if (req.method === 'PUT') {
-    const { name, coins, allocations, trigger_type, threshold_value, time_interval, trigger_prices, take_profit, stop_loss } = req.body;
+  if (event.httpMethod === 'PUT') {
+    const { name, coins, allocations, trigger_type, threshold_value, time_interval, trigger_prices, take_profit, stop_loss } = JSON.parse(event.body || '{}');
     
     try {
       await supabase.from('bots').update({
@@ -32,14 +38,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         stop_loss: stop_loss ? parseFloat(stop_loss) : null
       }).eq('id', id);
       
-      return res.json({ success: true });
+      return { statusCode: 200, body: JSON.stringify({ success: true }) };
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ error: 'Failed to update bot' });
+      return { statusCode: 500, body: JSON.stringify({ error: 'Failed to update bot' }) };
     }
   }
 
-  if (req.method === 'DELETE') {
+  if (event.httpMethod === 'DELETE') {
     try {
       await Promise.all([
         supabase.from('holdings').delete().eq('bot_id', id),
@@ -47,12 +53,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         supabase.from('portfolio_snapshots').delete().eq('bot_id', id)
       ]);
       await supabase.from('bots').delete().eq('id', id);
-      return res.json({ success: true });
+      return { statusCode: 200, body: JSON.stringify({ success: true }) };
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ error: 'Failed to delete bot' });
+      return { statusCode: 500, body: JSON.stringify({ error: 'Failed to delete bot' }) };
     }
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
-}
+  return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
+};

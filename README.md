@@ -17,19 +17,15 @@ A high-performance, real-time Asset Portfolio Rebalancing Simulator designed to 
 
 ## 🛠️ Technology Stack
 
-*   **Frontend:** React, Vite, TailwindCSS (for high-performance, beautiful UI rendering)
-*   **Backend / API:** Serverless Node.js (Vercel Edge Functions)
-*   **Database:** Supabase (PostgreSQL)
-*   **Market Data:** Pionex API (`getPrices`)
-*   **LLM Integration:** Google Gemini 3 Flash (via `@google/genai` for the built-in trading assistant)
+*   **Backend / API:** Serverless Node.js (Netlify Functions)
 
-## ☁️ Deployment Architecture (Vercel + Supabase)
+## ☁️ Deployment Architecture (Netlify + Supabase)
 
-This repository is strictly designed for modern Serverless environments. It leverages **Vercel File-based Routing** (`/api/*`) for standard REST operations (Create Bot, Pause Bot, etc).
+This repository is strictly designed for modern Serverless environments. It leverages **Netlify Functions** (`/api/*`) for standard REST operations (Create Bot, Pause Bot, etc).
 
-Because Vercel environments put idle functions to sleep, the core trading engine (`runSimulationTick`) has been transformed into a standalone HTTP endpoint at `/api/tick.ts`. 
+Because serverless environments put idle functions to sleep, the core trading engine (`runSimulationTick`) has been transformed into a standalone HTTP endpoint at `/api/tick.ts`. 
 
-**Note for Vercel Hobby Tier Users:** Vercel's free tier only allows 1 cron job per day. Because this simulator requires executing trades every minute, you must use a free external service like [cron-job.org](https://cron-job.org/) to ping your `https://your-domain.vercel.app/api/tick` endpoint every 1 minute.
+**Note for Netlify Free Tier Users:** This simulator requires executing trades every minute. You must use a free external service like [cron-job.org](https://cron-job.org/) to ping your `https://your-domain.netlify.app/api/tick` endpoint every 1 minute to wake the server up.
 
 ## ⚙️ Quick Start (Local Development)
 
@@ -53,7 +49,7 @@ Open `supabase_schema.sql`, copy the contents, and execute them in your Supabase
 # Install dependencies
 npm install
 
-# Run the local Vite preview server alongside the Vercel dev API proxy
+# Run the local Vite preview server alongside the Netlify dev API proxy
 npm run dev
 ```
 
