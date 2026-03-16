@@ -1,0 +1,5 @@
+{
+  "name": "Asset Portfolio Rebalancing Simulator",
+  "description": "A demo trading application to create, run, and test multi-asset rebalancing bot strategies (crypto, spot, tokenized stocks, leveraged tokens) using live price data.",
+  "requestFramePermissions": []
+}
