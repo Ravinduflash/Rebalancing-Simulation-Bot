@@ -11,7 +11,7 @@ export const handler: Handler = async (event, context) => {
   try {
     const { message } = JSON.parse(event.body || '{}');
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.0-flash',
       contents: message,
       config: {
         systemInstruction: 'You are an expert trading assistant. Help users understand portfolio rebalancing, markets (crypto, spot, tokenized stocks, leveraged tokens), and how to optimize their bot strategies. Be concise and helpful.',
